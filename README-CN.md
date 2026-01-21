@@ -19,7 +19,7 @@ MyToolkits 是一个专门为植物育种和数量遗传学数据分析设计的
 ```{r, eval=FALSE}
 # 安装 devtools 包（如未安装）
 # install.packages("devtools")
-devtools::install_github("您的用户名/MyToolkits")
+devtools::install_github("ShawnWx2019/MyToolkits")
 ```
 
 ## 使用示例

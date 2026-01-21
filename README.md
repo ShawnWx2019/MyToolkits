@@ -19,7 +19,7 @@ You can install the development version of MyToolkits from GitHub:
 
 ```{r, eval=FALSE}
 # install.packages("devtools")
-devtools::install_github("your_username/MyToolkits")
+devtools::install_github("ShawnWx2019/MyToolkits")
 ```
 
 ## Usage Examples
