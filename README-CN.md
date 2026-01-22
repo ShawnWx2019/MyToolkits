@@ -1,3 +1,4 @@
+[![Read in English](https://img.shields.io/badge/README-English-blue.svg)](./README.md)
 # MyToolkits
 
 MyToolkits 是一个专门为植物育种和数量遗传学数据分析设计的 R 包。它提供了从多环境试验计算育种值、执行全面的描述性统计，以及高度灵活地可视化 GWAS 结果的完整工作流程。

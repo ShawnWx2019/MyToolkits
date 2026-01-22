@@ -1,4 +1,4 @@
-
+[![Read in Chinese](https://img.shields.io/badge/README-%E4%B8%AD%E6%96%87-red.svg)](./README-CN.md)
 # MyToolkits
 
 MyToolkits is an R package designed to streamline data analysis in plant breeding and quantitative genetics. It provides a robust workflow for calculating breeding values (BLUP/BLUE) from multi-environment trials (MET), performing comprehensive descriptive statistics, and visualizing GWAS results with high-flexibility Manhattan plots.
