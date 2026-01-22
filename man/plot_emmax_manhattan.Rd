@@ -51,41 +51,35 @@ provided the correct column names are used.
 library(dplyr)
 
 # ------------------------------------------------------------------
-# Scenario 1: Plotting EMMAX results (Usually no header)
+# Scenario 1: Using the package's helper function for EMMAX files
 # ------------------------------------------------------------------
-# EMMAX output typically lacks headers. You must manually assign specific names:
-# "CHR", "BP", "P".
+# If you have the raw .ps output from EMMAX, use read_emmax_result()
+# to automatically handle the CHR:BP splitting.
 
-df_emmax <- read.table("path/to/emmax_result.txt", header = FALSE) \%>\%
-  setNames(c("CHR", "BP", "P"))
+# Step 1: Read and clean data
+df_catechin <- read_emmax_result("Catechin.ps")
 
-# Basic plot
-plot_emmax_manhattan(df_emmax, threshold = 6)
-
-# Plot with custom trait name in legend
-plot_emmax_manhattan(df_emmax, trait_name = "Cotton_Fiber", threshold = 6)
+# Step 2: Plot
+plot_emmax_manhattan(df_catechin, trait_name = "Catechin", threshold = 6)
 
 # ------------------------------------------------------------------
-# Scenario 2: Plotting results from other tools (e.g., GAPIT, TASSEL)
+# Scenario 2: Plotting generic GWAS results (e.g., GAPIT, TASSEL)
 # ------------------------------------------------------------------
-# Other tools usually have headers like "Chromosome", "Pos", "P.value".
-# You MUST rename them to "CHR", "BP", "P" before plotting.
+# For other tools, you just need to ensure columns are named CHR, BP, P.
 
-df_other <- read.csv("path/to/other_gwas_result.csv", header = TRUE) \%>\%
+df_other <- read.csv("other_gwas_result.csv", header = TRUE) \%>\%
   dplyr::rename(CHR = Chromosome, BP = Pos, P = P.value)
 
-plot_emmax_manhattan(df_other, threshold = 6)
+plot_emmax_manhattan(df_other, trait_name = "Other_Trait", threshold = 6)
 
 # ------------------------------------------------------------------
 # Scenario 3: Merging Multiple Traits
 # ------------------------------------------------------------------
 
-my_list <- list("Petal-Rutin" = df_emmax, "Leaf-Morin" = df_other)
-
-# You can also use trait_name argument to rename them on the fly:
-# trait_name = c("Rutin", "Morin")
+my_list <- list("Catechin" = df_catechin, "Other" = df_other)
 
 plot_emmax_manhattan(my_list,
+                     trait_name = c("Petal-Catechin", "Leaf-Trait"),
                      threshold = 5.13,
                      trait_colors = c("firebrick", "dodgerblue"))
 }

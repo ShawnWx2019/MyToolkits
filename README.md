@@ -87,11 +87,14 @@ The plot_emmax_manhattan function is designed to be highly compatible. It accept
 ```{r, eval=FALSE}
 # EMMAX usually has no header. 
 # You MUST set column names to: "CHR", "BP", "P"
-df_emmax <- read.table("emmax_output.ps", header = FALSE)
-colnames(df_emmax) <- c("CHR", "BP", "P")
+# For emmax output
+df_gwas_res <- read_emmax_result("emmax_result.ps")
+# For other softwares
+df_gwas_res <- read.table("gwas_result.txt", header = FALSE)
+colnames(df_gwas_res) <- c("CHR", "BP", "P")
 
 # Plot with default threshold (-log10(P) = 4)
-plot_emmax_manhattan(df_emmax, trait_name = "Fiber_Length", threshold = 5)
+plot_emmax_manhattan(df_gwas_res, trait_name = "Fiber_Length", threshold = 5)
 ```
 
 #### Scenario B: Multi-Trait Comparison

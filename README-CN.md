@@ -87,9 +87,11 @@ plot_emmax_manhattan 函数具有高度兼容性，可接受 EMMAX（无表头�
 ```{r, eval=FALSE}
 # EMMAX 输出通常没有表头
 # 必须设置列名为："CHR", "BP", "P"
-df_emmax <- read.table("emmax_output.ps", header = FALSE)
-colnames(df_emmax) <- c("CHR", "BP", "P")
-
+# 对于Emmax软件输出的.ps文件，我们提供了read_emmax_result函数直接进行读取和数据转换
+df_gwas_res <- read_emmax_result("emmax_result.ps")
+# 对于其他软件导入的结果：
+df_gwas_res <- read.table("gwas_result.txt", header = FALSE)
+colnames(df_gwas_res) <- c("CHR", "BP", "P")
 # 使用默认阈值（-log10(P) = 4）绘图
 plot_emmax_manhattan(df_emmax, trait_name = "Fiber_Length", threshold = 5)
 ```
