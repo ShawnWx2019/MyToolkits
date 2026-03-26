@@ -1,0 +1,120 @@
+---
+title: "GWAS 中表型数据的标准化与转化方法"
+author: "MyToolkits 文档"
+date: today
+format: 
+  html:
+    toc: true
+    toc-depth: 3
+    number-sections: true
+    theme: cosmo
+    highlight-style: github
+    code-fold: show
+---
+
+## 引言
+
+在全基因组关联分析（GWAS）和数量遗传学中，性状残差的正态性假设对于线性混合模型（LMMs）和标准回归分析至关重要。非正态分布的表型可能导致Ⅰ型错误（假阳性）膨胀或统计功效降低。
+
+本文档详细介绍了 MyToolkits 包中 `transform_pheno` 函数实现的标准化与转化方法，提供了数学定义、适用场景和高水平文献参考。
+
+## 转化方法
+
+### 对数转化 (log2, log10)
+
+对数转化是处理严重右偏（正偏态）定量性状最常用的方法，例如基因表达水平、代谢物丰度或病原体载量。它将乘法关系转化为加法关系，稳定了整个数据范围内的方差。
+
+**数学定义：**
+
+$$y_i = \log_b(x_i + c)$$
+
+其中 $b$ 为底数（通常为 2 或 10），$c$ 是偏移常数，用于在数据包含零值时避免计算 $\log(0)$。
+
+**适用场景：** 方差随均值增加的严重偏态连续数据。
+
+**参考文献：**  
+
+> Visscher, P. M., Wray, N. R., et al. (2017). 10 Years of GWAS Discovery: Biology, Function, and Translation. *The American Journal of Human Genetics*, 101(1), 5-22. (讨论了表型数据准备的一般方法及偏态定量性状的处理)。
+
+### Z-score 标准化 (zscore)
+
+Z-score 标准化将表型中心化至均值为 0，并缩放到标准差为 1。它不会改变数据分布的基本形状（例如，它无法将偏态数据转化为正态），但能将不同性状置于可比较的尺度上。
+
+**数学定义：**
+
+$$z_i = \frac{x_i - \mu}{\sigma}$$
+
+**适用场景：** 比较不同单位测量的多个性状的效应大小（Beta 值）（例如，比较以厘米为单位的株高与以公斤/公顷为单位的产量），或计算多基因风险评分（PRS）。
+
+**参考文献：**  
+
+>Bulik-Sullivan, B. K., et al. (2015). LD Score regression distinguishes confounding from polygenicity in genome-wide association studies. *Nature Genetics*, 47(3), 291-295.
+
+### 反正弦平方根转化 (arcsine_sqrt)
+
+反正弦平方根转化历史上用于处理比例或百分比数据（严格限定在 0 到 1 之间），以稳定方差。这类数据的方差在边界（0 和 1）附近较小，在中心（0.5）附近较大。
+
+**数学定义：**
+
+$$y_i = \arcsin(\sqrt{x_i})$$
+
+**适用场景：** 病害感染率、组织损伤百分比或 DNA 甲基化 $\beta$ 值。
+
+**参考文献：**  
+
+>Sokal, R. R., & Rohlf, F. J. (1995). *Biometry: the principles and practice of statistics in biological research*. W. H. Freeman and Co. (一本验证二项比例方差稳定性的基础教材)。
+
+### Logit 转化 (logit)
+
+Logit 转化（对数优势比）是处理比例数据的一种替代且通常更优的方法。与反正弦转化不同，logit 函数将区间 $(0, 1)$ 内的值映射到整个实数轴 $(-\infty, \infty)$，使其非常适合线性模型。
+
+**数学定义：**
+
+$$y_i = \ln\left(\frac{x_i}{1 - x_i}\right)$$
+
+**适用场景：** 常用于表观基因组关联分析（EWAS）中，将甲基化 $\beta$ 值转化为 M 值，在线性模型中提供更好的统计性能。
+
+**参考文献：**  
+
+>Du, P., Zhang, X., Huang, C. C., et al. (2010). Comparison of Beta-value and M-value methods for quantifying methylation levels by microarray analysis. *BMC Bioinformatics*, 11, 587. (论证了 logit/M 值相较于原始比例数据的统计优越性)。
+
+### 基于排名的逆正态转化 (int)
+
+逆正态转化（INT）是现代 GWAS 中处理复杂非正态定量性状的“金标准”。它是一种非参数映射，强制将样本分布完美地转化为标准正态分布。我们采用 Blom 公式，这是人类和植物遗传学中最稳健且被广泛接受的估计方法。
+
+**数学定义：**
+
+$$y_i = \Phi^{-1}\left(\frac{r_i - c}{N - 2c + 1}\right)$$
+
+其中 $\Phi^{-1}$ 是标准正态分布的分位数函数，$r_i$ 是第 $i$ 个观测值的普通排名，$N$ 是样本量，Blom 常数 $c = \frac{3}{8}$。
+
+**适用场景：** 回归残差严重违反正态性假设的定量性状 GWAS，可最大程度减少离群值影响并降低假阳性关联。
+
+**参考文献：**  
+
+>McCaw, Z. R., Lane, J. M., Saxena, R., Redline, S., & Lin, X. (2020). Operating characteristics of the rank-based inverse normal transformation for quantitative trait analysis in genome-wide association studies. *Biometrics*, 76(4), 1262-1272.  
+
+>Beasley, T. M., Erickson, S., & Allison, D. B. (2009). Rank-based inverse normal transformations are increasingly used, but are they merited?. *Behavior Genetics*, 39(5), 580-595.
+
+## 在 MyToolkits 中的应用
+
+`transform_pheno` 函数完全向量化且兼容 dplyr。以下是如何在 GWAS 之前的现代数据分析流程中无缝集成该函数的示例：
+
+```{r}
+#| eval: false
+library(dplyr)
+library(MyToolkits)
+
+# 假设 'pheno_data' 是原始表型数据表
+prepared_gwas_data <- pheno_data %>%
+  mutate(
+    # 对高度偏态的产量性状进行标准正态转化
+    Yield_INT = transform_pheno(Yield, method = "int"),
+    
+    # 对病害发生率（限定在 0 到 1 之间）进行 logit 转化
+    Disease_Logit = transform_pheno(Disease_Rate, method = "logit"),
+    
+    # 标准化环境协变量
+    Temp_Z = transform_pheno(Temperature, method = "zscore")
+  )
+```

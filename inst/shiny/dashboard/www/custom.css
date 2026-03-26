@@ -1,0 +1,34 @@
+/* www/custom.css */
+
+/* 1. 调整整体字体，更加学术和现代 */
+body {
+  font-family: "Roboto", "Helvetica Neue", Arial, sans-serif;
+  background-color: #f4f6f9;
+}
+
+/* 2. 美化侧边栏选中状态 */
+.sidebar-light-primary .nav-sidebar > .nav-item > .nav-link.active {
+  background-color: #0073b7 !important; /* 你的主题色 */
+  color: #ffffff !important;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  border-radius: 5px;
+}
+
+/* 3. 卡片增强：增加悬浮阴影效果 */
+.card {
+  border: none;
+  border-radius: 8px; /* 圆角 */
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+}
+
+/* 4. 调整标题栏 */
+.main-header {
+  border-bottom: 1px solid #dee2e6;
+  background: white;
+}

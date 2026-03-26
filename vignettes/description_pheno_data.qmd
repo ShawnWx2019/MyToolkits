@@ -1,0 +1,120 @@
+---
+title: "Phenotype Data Standardization and Transformation in GWAS"
+author: "MyToolkits Documentation"
+date: today
+format: 
+  html:
+    toc: true
+    toc-depth: 3
+    number-sections: true
+    theme: cosmo
+    highlight-style: github
+    code-fold: show
+---
+
+## Introduction
+
+In genome-wide association studies (GWAS) and quantitative genetics, the assumption of normality for trait residuals is critical for linear mixed models (LMMs) and standard regression analyses. Non-normally distributed phenotypes can lead to inflated Type I errors (false positives) or reduced statistical power.
+
+This document details the standardization and transformation methods implemented in the `transform_pheno` function of the MyToolkits package, providing mathematical definitions, appropriate use cases, and high-level literature references.
+
+## Transformation Methods
+
+### Logarithmic Transformation (log2, log10)
+
+Logarithmic transformations are the most common approach for handling heavily right-skewed quantitative traits, such as gene expression levels, metabolite abundances, or pathogen loads. It converts multiplicative relationships into additive ones, stabilizing the variance across the data range.
+
+**Mathematical Definition:**
+
+$$y_i = \log_b(x_i + c)$$
+
+Where $b$ is the base (typically 2 or 10), and $c$ is an offset constant added to avoid $\log(0)$ when the data contains zeros.
+
+**Use Case:** Highly skewed continuous data where the variance increases with the mean.
+
+**Reference:**   
+
+> Visscher, P. M., Wray, N. R., et al. (2017). 10 Years of GWAS Discovery: Biology, Function, and Translation. *The American Journal of Human Genetics*, 101(1), 5-22. (Discusses general phenotype preparation and handling of skewed quantitative traits).
+
+### Z-score Standardization (zscore)
+
+Z-score standardization centers the phenotype to a mean of 0 and scales it to a standard deviation of 1. While it does not change the underlying shape of the distribution (e.g., it will not make skewed data normal), it places different traits on a comparable scale.
+
+**Mathematical Definition:**
+
+$$z_i = \frac{x_i - \mu}{\sigma}$$
+
+**Use Case:** When comparing effect sizes (Beta values) across multiple traits measured in different units (e.g., comparing plant height in cm with yield in kg/ha), or when calculating Polygenic Risk Scores (PRS).
+
+**Reference:**  
+
+>Bulik-Sullivan, B. K., et al. (2015). LD Score regression distinguishes confounding from polygenicity in genome-wide association studies. *Nature Genetics*, 47(3), 291-295.
+
+### Arcsine Square Root Transformation (arcsine_sqrt)
+
+The arcsine square root transformation is historically used for proportional or percentage data (strictly bounded between 0 and 1) to stabilize variances, which tend to be smaller near the boundaries (0 and 1) and larger near the center (0.5).
+
+**Mathematical Definition:**
+
+$$y_i = \arcsin(\sqrt{x_i})$$
+
+**Use Case:** Disease infection rates, tissue damage percentages, or DNA methylation $\beta$-values.
+
+**Reference:**  
+
+>Sokal, R. R., & Rohlf, F. J. (1995). *Biometry: the principles and practice of statistics in biological research*. W. H. Freeman and Co. (A foundational text validating variance stabilization for binomial proportions).
+
+### Logit Transformation (logit)
+
+The logit transformation (log-odds) is an alternative and often preferred method for proportion data. Unlike the arcsine transformation, the logit function maps values from the interval $(0, 1)$ to the entire real line $(-\infty, \infty)$, making it highly suitable for linear modeling.
+
+**Mathematical Definition:**
+
+$$y_i = \ln\left(\frac{x_i}{1 - x_i}\right)$$
+
+**Use Case:** Frequently used in epigenome-wide association studies (EWAS) to transform methylation $\beta$-values into M-values, providing better statistical performance in linear models.
+
+**Reference:**  
+
+>Du, P., Zhang, X., Huang, C. C., et al. (2010). Comparison of Beta-value and M-value methods for quantifying methylation levels by microarray analysis. *BMC Bioinformatics*, 11, 587. (Demonstrates the statistical superiority of logit/M-values over raw proportions).
+
+### Rank-Based Inverse Normal Transformation (int)
+
+The Inverse Normal Transformation (INT) is the "gold standard" in modern GWAS for handling complex, non-normal quantitative traits. It is a non-parametric mapping that forces the sample distribution perfectly into a standard normal distribution. We utilize Blom's formula, which is the most robust and widely accepted estimator in human and plant genetics.
+
+**Mathematical Definition:**
+
+$$y_i = \Phi^{-1}\left(\frac{r_i - c}{N - 2c + 1}\right)$$
+
+Where $\Phi^{-1}$ is the quantile function of the standard normal distribution, $r_i$ is the ordinary rank of the $i$-th observation, $N$ is the sample size, and Blom's constant $c = \frac{3}{8}$.
+
+**Use Case:** GWAS of quantitative traits where the regression residuals severely violate the normality assumption, minimizing the impact of outliers and reducing false-positive associations.
+
+**References:**  
+
+>McCaw, Z. R., Lane, J. M., Saxena, R., Redline, S., & Lin, X. (2020). Operating characteristics of the rank-based inverse normal transformation for quantitative trait analysis in genome-wide association studies. *Biometrics*, 76(4), 1262-1272.  
+
+>Beasley, T. M., Erickson, S., & Allison, D. B. (2009). Rank-based inverse normal transformations are increasingly used, but are they merited? *Behavior Genetics*, 39(5), 580-595.
+
+## Application in MyToolkits
+
+The `transform_pheno` function is fully vectorized and dplyr compatible. Here is an example of how to seamlessly integrate it into a modern data analysis pipeline prior to GWAS:
+
+```{r}
+#| eval: false
+library(dplyr)
+library(MyToolkits)
+
+# Assuming 'pheno_data' is your raw phenotype table
+prepared_gwas_data <- pheno_data %>%
+  mutate(
+    # Standard normal transformation for a highly skewed yield trait
+    Yield_INT = transform_pheno(Yield, method = "int"),
+  
+    # Logit transformation for disease incidence (bounded 0 to 1)
+    Disease_Logit = transform_pheno(Disease_Rate, method = "logit"),
+  
+    # Standardizing environmental covariates
+    Temp_Z = transform_pheno(Temperature, method = "zscore")
+  )
+```

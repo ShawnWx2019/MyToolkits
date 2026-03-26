@@ -10,8 +10,15 @@ Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.2
 Imports: 
     dplyr,
+    bs4Dash,
+    shinycssloaders,
+    shinyalert,
+    DT,
+    ggplot2,
+    shinycssloaders,
     emmeans,
     lme4,
     methods,
     tibble,
-    tidyr
+    tidyr,
+    readr
