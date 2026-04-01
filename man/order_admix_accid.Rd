@@ -12,11 +12,11 @@ order_admix_accid(object, ordered_by_k)
 \arguments{
 \item{object}{An AdmixData object.}
 
-\item{ordered_by_k}{Numeric. The K value used as the reference for sorting.}
+\item{ordered_by_k}{Numeric. The K value used as the reference for sorting and sub-population assignment.}
 }
 \value{
-An updated AdmixData object with accid_order and boundaries filled.
+An updated AdmixData object.
 }
 \description{
-Sorts the samples by grouping them based on their dominant ancestry component at a specific K.
+Sorts the samples by grouping them based on their dominant ancestry component at a specific K. Generates boundary lines and assigns samples to sub-populations.
 }

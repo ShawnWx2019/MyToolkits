@@ -21,4 +21,7 @@ Imports:
     methods,
     tibble,
     tidyr,
-    readr
+    readr,
+    gghalves (>= 0.1.4)
+Remotes: 
+    erocoar/gghalves

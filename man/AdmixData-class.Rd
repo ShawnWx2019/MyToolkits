@@ -18,8 +18,10 @@ An S4 class to store and process Admixture structure results.
 
 \item{\code{long_data}}{Data.frame in long format for ggplot2.}
 
-\item{\code{accid_order}}{Character vector of ordered sample IDs.}
+\item{\code{accid_order}}{Character vector of ordered sample IDs for plotting.}
 
 \item{\code{boundaries}}{Numeric vector of X-axis positions for vertical group separator lines.}
+
+\item{\code{group_info}}{Data.frame containing the Accession and its assigned Group based on the reference K.}
 }}
 
