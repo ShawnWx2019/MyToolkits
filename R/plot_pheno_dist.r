@@ -18,9 +18,9 @@
 #' @importFrom rlang .data sym !!
 #' @importFrom dplyr select all_of filter mutate
 #' @importFrom tidyr pivot_longer everything
-#' @importFrom ggplot2 ggplot aes geom_histogram geom_density geom_boxplot geom_jitter labs theme_classic theme element_blank element_text scale_fill_manual scale_color_manual after_stat position_nudge coord_flip element_line
+#' @importFrom ggplot2 ggplot aes geom_histogram geom_density geom_boxplot geom_jitter labs theme_classic theme element_blank element_text scale_fill_manual scale_color_manual after_stat position_nudge coord_flip element_line guides
 #' @importFrom gghalves geom_half_violin
-#' @importFrom patchwork plot_layout guides
+#' @importFrom patchwork plot_layout
 #'
 #' @examples
 #' \dontrun{
