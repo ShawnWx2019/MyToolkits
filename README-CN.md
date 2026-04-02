@@ -1,127 +1,166 @@
 [![Read in English](https://img.shields.io/badge/README-English-blue.svg)](./README.md)
-# MyToolkits
+# MyToolkits <img src="man/figures/logo.png" align="right" height="139" alt="" />
 
-MyToolkits 是一个专门为植物育种和数量遗传学数据分析设计的 R 包。它提供了从多环境试验计算育种值、执行全面的描述性统计，以及高度灵活地可视化 GWAS 结果的完整工作流程。
+MyToolkits 是一个专门为植物育种、数量遗传学以及多组学研究数据分析设计的 R 包。基于稳健的 S4 面向对象类构建，它提供了从多环境试验（BLUP/BLUE）、科学描述性统计、GWAS 可视化、表型数据转换到群体结构分析的完整工作流程。
 
 ## 功能特点
 
-- **多环境试验分析**：使用 lme4 计算 BLUP（最佳线性无偏预测）和 BLUE（最佳线性无偏估计）值。自动估计广义遗传力（$H^2$）。
-
-- **科学描述性统计**：生成可直接用于发表的统计摘要，包括标准误（SE）以及采用 SAS/SPSS 标准的无偏偏度和峰度估计。
-
-- **灵活的 GWAS 可视化**：生成兼容 EMMAX、GAPIT 和 TASSEL 输出的曼哈顿图。支持多性状可视化和大规模数据的自动降采样。
-
-- **S4 面向对象设计**：使用稳健的 S4 类（BreedingValue, DescriptiveStat）确保数据完整性。
+- **多环境试验分析**：使用 `lme4` 计算 BLUP（最佳线性无偏预测）和 BLUE（最佳线性无偏估计）值。自动估计广义遗传力（$H^2$）。
+- **科学描述性统计**：生成可直接用于学术发表的统计摘要，包括标准误（SE）以及采用 SAS/SPSS 标准的无偏偏度和峰度估计。
+- **表型数据处理**：提供兼容 Tidyverse 的函数来对性状进行标准化处理（例如逆正态变换、Z-score），并生成云雨分布图以在下游分析前评估数据质量。
+- **灵活的 GWAS 可视化**：生成高度兼容 EMMAX、GAPIT 和 TASSEL 输出的曼哈顿图。支持多性状叠加对比和大规模数据的自动降采样。
+- **群体结构可视化**：基于综合的 S4 类工具，使用内置的学术级且对色盲友好的调色板，对 PLINK PCA、ADMIXTURE Q 矩阵（支持自动谱系颜色追踪）以及系统发育树进行高质量可视化。
 
 ## 安装
 
-您可以从 GitHub 安装开发版 MyToolkits：
+您可以从 GitHub 安装开发版的 MyToolkits：
+*我们强烈建议在安装时设置 `build_vignettes = TRUE`，以便获取并编译包内置的详细离线教程。*
 
-```{r, eval=FALSE}
+```r
 # 安装 devtools 包（如未安装）
 # install.packages("devtools")
-devtools::install_github("ShawnWx2019/MyToolkits")
+devtools::install_github("ShawnWx2019/MyToolkits", build_vignettes = TRUE)
 ```
 
 ## 使用示例
 
 ### 1. 育种值分析（BLUP & BLUE）
 
-计算基因型在多年份和多地点的育种值。该函数自动处理基因型与环境互作效应。
+计算基因型在多年份和多地点的育种值。该函数可自动处理基因型与环境的互作效应（GxE）。
 
-```{r, eval=FALSE}
+```r
 library(MyToolkits)
 
-# --- 1. 加载多环境试验数据 ---
-# 数据必须包含：Line, Year, Location, Trait, Value
-data("my_pheno_data")
-
-# --- 2. 计算 BLUPs（随机效应模型）---
-# 拟合模型：Value ~ (1|Line) + (1|Year) + (1|Loc) + (1|Line:Year) + ...
+# --- 1. 计算 BLUPs 并提取遗传力 ---
 blup_res <- get_unbiase_by_year_loc(
   x = my_pheno_data,
   Tag = "Yield",           # 要分析的具体性状水平
   method = "blup",         # "blup" 或 "blue"
-  trait.name = "TraitID",  # 性状ID的列名
-  year.name = "Year",      # 年份列名
-  loc.name = "Loc",        # 地点列名
-  line.name = "Genotype",  # 基因型/品系列名
-  value.name = "Value"     # 表型值列名
+  trait.name = "TraitID",  
+  year.name = "Year",      
+  loc.name = "Loc",        
+  line.name = "Genotype",  
+  value.name = "Value"     
 )
 
-# 查看 S4 对象摘要
-print(blup_res)
-# 输出包含：模型收敛状态和遗传力（H2）
+print(blup_res) # 打印查看 S4 对象摘要及模型状态
 
-# --- 3. 导出完整数据表 ---
-# 将计算的 BLUPs 与原始数据合并（按环境横向展开）
+# --- 2. 导出完整数据表 ---
+# 将计算的 BLUPs 与原始数据合并
 final_table <- get_complete_table(blup_res)
-head(final_table)
 ```
 
 ### 2. 描述性统计
 
-计算详细的统计指标，使用无偏估计（特别适合小样本量）。
+计算详细的统计指标，使用科学的无偏估计（特别适合小样本量）。
 
-```{r, eval=FALSE}
-# 创建数值向量
+```r
 phenotypes <- c(10.5, 12.1, 9.8, 11.0, 10.2, 13.5, NA, 10.8)
 
-# 计算统计量
-stats_obj <- stat_descriptive(
-  lab_name = "Plant_Height",
-  x = phenotypes,
-  na.omit = TRUE
-)
+stats_obj <- stat_descriptive(lab_name = "Plant_Height", x = phenotypes, na.omit = TRUE)
 
-# 访问结果表格
-print(stats_obj@statistics)
-# 返回：样本量、均值、标准误、标准差、变异系数、最小值/最大值、分位数、偏度、峰度
+# 访问并提取结果表格
+get_stat_table(stats_obj)
 ```
 
-### 3. GWAS 可视化（曼哈顿图）
+### 3. 表型数据转换与分布
 
-plot_emmax_manhattan 函数具有高度兼容性，可接受 EMMAX（无表头）或 GAPIT（有表头）等工具的原始输出。
+在进行 GWAS 或下游统计建模之前，清洗并可视化您的表型数据。
 
-#### 场景 A：单性状分析（EMMAX 格式）
+📖 **教程文档 (Vignettes)**：有关为何以及如何标准化表型数据的全面指南，请通过 `vignette("description_pheno_data_CN", package = "MyToolkits")` 在 R 中阅读内置教程，或直接在 GitHub 上查看源码：
+- [表型数据标准化说明 (中文版)](./vignettes/description_pheno_data_CN.qmd)
+- [Phenotypic Data Description (English)](./vignettes/description_pheno_data.qmd)
 
-```{r, eval=FALSE}
-# EMMAX 输出通常没有表头
-# 必须设置列名为："CHR", "BP", "P"
-# 对于Emmax软件输出的.ps文件，我们提供了read_emmax_result函数直接进行读取和数据转换
-df_gwas_res <- read_emmax_result("emmax_result.ps")
-# 对于其他软件导入的结果：
-df_gwas_res <- read.table("gwas_result.txt", header = FALSE)
-colnames(df_gwas_res) <- c("CHR", "BP", "P")
-# 使用默认阈值（-log10(P) = 4）绘图
-plot_emmax_manhattan(df_emmax, trait_name = "Fiber_Length", threshold = 5)
+```r
+library(dplyr)
+
+# 3.1 数据转换（兼容 Tidyverse）
+# 使用 GWAS 标准的逆正态变换 (INT) 处理异常值
+norm_data <- my_pheno_data %>%
+  mutate(Yield_INT = transform_pheno(Yield, method = "int"))
+
+# 3.2 可视化（直方图与云雨图联合绘制）
+# 单个性状分布
+plot_pheno_dist(norm_data, val_cols = "Yield_INT", fill_color = "#377EB8")
+
+# 比较多个生物学重复
+plot_pheno_dist(norm_data, val_cols = c("Rep1", "Rep2", "Rep3"))
 ```
 
-#### 场景 B：多性状比较
+### 4. GWAS 可视化（曼哈顿图）
 
-可通过命名列表传递多个数据框，在同一图表中比较多个性状（通过颜色区分）。
+高度灵活的曼哈顿图绘制工具，支持多性状叠加以及提升渲染速度的降采样功能。
 
-```{r, eval=FALSE}
-# 准备数据框列表
-gwas_list <- list(
-  "Petal_Color" = df_petal,  # 数据框必须包含 CHR, BP, P 列
-  "Leaf_Shape"  = df_leaf
-)
+```r
+# 场景 A：单性状分析（使用针对 EMMAX 格式的辅助读取函数）
+df_gwas <- read_emmax_result("emmax_result.ps")
+plot_emmax_manhattan(df_gwas, trait_name = "Yield", threshold = 5)
 
+# 场景 B：多性状叠加比较
+gwas_list <- list("Trait1" = df_trait1, "Trait2" = df_trait2)
 plot_emmax_manhattan(
   gwas_input = gwas_list,
-  threshold = 6,
-  sample_rate = 0.5,       # 对非显著SNP降采样50%以提高绘图速度
+  threshold = 6, 
+  sample_rate = 0.5, # 对非显著 SNP 降采样 50%
   trait_colors = c("firebrick", "dodgerblue")
 )
 ```
 
+### 5. 群体结构可视化
+
+用于可视化群体遗传结构的完整工具集，原生支持 PLINK 和 ADMIXTURE 的输出格式。
+*注：MyToolkits 内置了多款学术级配色方案，如 "nature", "npg_classic", "earthy", "mp_cold" 及 "cyber" 等。*
+
+#### 5.1 ADMIXTURE 谱系图
+
+解析多个 `.Q` 文件，并自动在不同的 K 值层级间追踪和继承亚群颜色。
+
+```r
+# 读取 K=2 到 K=5 的 Admixture 结果文件
+admix_data <- read_admixture(fam_file = "pop.fam", q_prefix = "pop_structure", k_range = 2:5)
+
+# 基于 K=3 的核心亚群对样本进行排序分组
+admix_ordered <- order_admix_accid(admix_data, ordered_by_k = 3)
+
+# 绘制堆叠柱状图
+plot_admixture(admix_ordered, colors = "nature")
+```
+
+#### 5.2 主成分分析 (PCA)
+
+支持从 PLINK 输出结果生成碎石图、2D 散点图、多维矩阵图以及 3D 交互图。
+
+```r
+# 读取 PLINK PCA 结果并与分组元数据合并
+pca_data <- read_plink_pca(eigenvec_file = "plink.eigenvec", eigenval_file = "plink.eigenval", group_info = sample_info)
+
+# 绘制带有置信椭圆的 2D 散点图，程序会自动修正内部因子的颜色匹配
+plot_pca_2d(pca_data, pc_x = 1, pc_y = 2, colors = "npg_classic", ellipse = TRUE)
+
+# 其他可用的 PCA 绘图功能：
+# plot_pca_scree(pca_data, n_pc = 10)
+# plot_pca_pairs(pca_data, n_pc = 5)
+# plot_pca_3d(pca_data, pc_x = 1, pc_y = 2, pc_z = 3)
+```
+
+#### 5.3 系统发育树
+
+基于 `ggtree` 构建，支持导入元数据并实现高度定制化的系统树绘制（自动进行节点排序平滑处理）。
+
+```r
+# 读取 Newick 格式树文件并注入群体分组信息
+tree_data <- read_phylo_tree(nwk_file = "population.nwk", group_info = sample_info, ladderize = TRUE)
+
+# 绘制带有分支颜色的环形树
+plot_phylo_tree(tree_data, layout = "circular", colors = "earthy", linewidth = 0.5)
+```
+
 ## 依赖包
 
-- lme4：用于混合线性模型
-- emmeans：用于最小二乘均值（BLUE）
-- ggplot2：用于可视化
-- dplyr, tidyr, tibble, magrittr：用于数据整理
+- **统计与模型**：`lme4`, `emmeans`, `stats`
+- **数据处理**：`dplyr`, `tidyr`, `tibble`, `magrittr`, `purrr`, `stringr`
+- **可视化**：`ggplot2`, `ggtree`, `gghalves`, `patchwork`, `plotly`
+- **系统发育**：`ape`
 
 ## 许可证
 
